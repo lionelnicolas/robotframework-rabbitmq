@@ -338,7 +338,7 @@ class RabbitMq(object):
         if self._channel is None:
             self._channel = self.amqp_connection.channel()
         if self.amqp_connection.blocked:
-            raise Exception('Connection is blocked')
+            raise RabbitMqException('Connection is blocked')
         return self._channel
 
     def create_exchange(self, exchange_name: str, exchange_type: str, auto_delete: bool = False,
@@ -760,7 +760,7 @@ class RabbitMq(object):
                                     headers=self._prepare_request_headers(),
                                     timeout=self.http_connection.timeout)
         except requests.exceptions.RequestException as e:
-            raise Exception(f'Could not send request: {e}')
+            raise RabbitMqException(f'Could not send request: {e}') from e
         logger.debug(f'Response status={response.status_code}')
         return response.status_code == 200
 
@@ -1208,3 +1208,7 @@ class RabbitMq(object):
                                 timeout=self.http_connection.timeout)
         response.raise_for_status()
         return response.json()
+
+
+class RabbitMqException(Exception):
+    """Something wrong happened in RabbitMQ handling"""
