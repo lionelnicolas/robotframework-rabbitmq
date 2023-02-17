@@ -340,7 +340,7 @@ class RabbitMq:
         *Returns:*\n
             Channel.
         """
-        if self._channel is None:
+        if self._channel is None or not self._channel.is_open:
             self._channel = self.amqp_connection.channel()
         if self.amqp_connection.blocked:
             raise RabbitMqException('Connection is blocked')
