@@ -1,9 +1,13 @@
-# -*- coding: utf-8 -*- # noqa: E999
+# -*- coding: utf-8 -*-
+"""RabbitMQ robot framework library"""
+# pylint: disable=invalid-name
+# pylint: disable=line-too-long
 
 import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from urllib.parse import quote
+from socket import gaierror, error
 
 import pika
 import requests
@@ -16,12 +20,12 @@ from pika.exceptions import ChannelClosed, IncompatibleProtocolError
 from robot.api import logger
 from robot.utils import ConnectionCache
 from robot.libraries.BuiltIn import BuiltIn
-from socket import gaierror, error
 
-RabbitMqMessage = Union[Tuple[Dict[str, Any], Dict[str, Any], str], Tuple[None, None, None]]  # noqa: 993
+RabbitMqMessage = Union[Tuple[Dict[str, Any], Dict[str, Any], str], Tuple[None, None, None]]
 
 
-class RequestConnection(object):
+# pylint: disable=too-few-public-methods
+class RequestConnection:
     """This class contains settings to connect to RabbitMQ via HTTP."""
     def __init__(self, host: str, port: Union[int, str], username: str, password: str, timeout: int) -> None:
         """
@@ -43,7 +47,6 @@ class RequestConnection(object):
 
     def close(self) -> None:
         """Close connection."""
-        pass
 
 
 class BlockedConnection(pika.BlockingConnection):
@@ -59,11 +62,12 @@ class BlockedConnection(pika.BlockingConnection):
             parameters: connection parameters instance or non-empty sequence of them;
             impl_class: implementation class (for test/debugging only).
         """
-        super(BlockedConnection, self).__init__(parameters=parameters, _impl_class=impl_class)
+        super().__init__(parameters=parameters, _impl_class=impl_class)
         self.add_on_connection_blocked_callback(self.on_blocked)
         self.add_on_connection_unblocked_callback(self.on_unblocked)
         self._blocked = False
 
+    # pylint: disable=unused-argument
     def on_blocked(self, method: Connection.Blocked) -> None:
         """
         Set connection blocking flag.
@@ -73,6 +77,7 @@ class BlockedConnection(pika.BlockingConnection):
         """
         self._blocked = True
 
+    # pylint: disable=unused-argument
     def on_unblocked(self, method: Connection.Unblocked) -> None:
         """
         Unset connection blocking flag.
@@ -103,7 +108,7 @@ class BlockedConnection(pika.BlockingConnection):
             logger.debug("Connection is already closed.")
 
 
-class RabbitMq(object):
+class RabbitMq:
     """
     Library for working with RabbitMQ.
 
@@ -227,7 +232,7 @@ class RabbitMq(object):
         timeout = 15
         parameters_for_connect = f"host={host}, port={port}, username={username}, timeout={timeout}, alias={alias}"
 
-        logger.debug('Connecting using : {params}'.format(params=parameters_for_connect))
+        logger.debug(f'Connecting using : {parameters_for_connect}')
         try:
             self._http_connection = RequestConnection(host, port, username, password, timeout)
         except (gaierror, error, IOError):
@@ -408,6 +413,7 @@ class RabbitMq(object):
         exchange_name = str(exchange_name)
         self._get_channel().exchange_delete(exchange=exchange_name)
 
+    # pylint: disable=unused-argument
     def create_queue(self, queue_name: str, auto_delete: bool = False, durable: bool = False,
                      node: Optional[str] = None, arguments: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -426,7 +432,7 @@ class RabbitMq(object):
         | Create Queue | queue_name=testQueue | auto_delete=false | durable=true | node=rabbit@primary | arguments=${args} |
         """
         queue_name = str(queue_name)
-        logger.debug('Create queue {n}'.format(n=queue_name))
+        logger.debug(f'Create queue {queue_name}')
         self._get_channel().queue_declare(queue=queue_name, durable=durable, auto_delete=auto_delete,
                                           arguments=arguments)
 
@@ -536,6 +542,7 @@ class RabbitMq(object):
         queue_name = str(queue_name)
         consumer_name = f"consumer{queue_name}"
 
+        # pylint: disable=unused-argument
         def on_message_callback(channel: BlockingChannel, method: Basic.Deliver, properties: BasicProperties,
                                 body: bytes) -> None:
             """
@@ -550,7 +557,7 @@ class RabbitMq(object):
                 body: bytes.
             """
             tag = method.delivery_tag
-            logger.debug(f"Consume message {tag} - {body}")
+            logger.debug(f"Consume message {tag} - {body.decode()}")
             channel.basic_reject(tag, requeue)
             consumed_list.append(tag)
             if len(consumed_list) >= count:
@@ -583,37 +590,37 @@ class RabbitMq(object):
 
         if not (method and properties and body):
             return None, None, None
-        else:
-            delivery_data = {
-                'delivery_tag': method.delivery_tag,
-                'redelivered': method.redelivered,
-                'exchange': method.exchange,
-                'routing_key': method.routing_key,
-                'message_count': method.message_count
-            }
 
-            message_properties = {
-                'content_type': properties.content_type,
-                'content_encoding': properties.content_encoding,
-                'headers': properties.headers,
-                'delivery_mode': properties.delivery_mode,
-                'priority': properties.priority,
-                'correlation_id': properties.correlation_id,
-                'reply_to': properties.reply_to,
-                'expiration': properties.expiration,
-                'message_id': properties.message_id,
-                'timestamp': properties.timestamp,
-                'type': properties.type,
-                'user_id': properties.user_id,
-                'app_id': properties.app_id,
-                'cluster_id': properties.cluster_id
-            }
-            if ack:
-                delivery_tag = delivery_data['delivery_tag']
-                self._get_channel().basic_ack(delivery_tag=delivery_tag)
-            return delivery_data, message_properties, body
+        delivery_data = {
+            'delivery_tag': method.delivery_tag,
+            'redelivered': method.redelivered,
+            'exchange': method.exchange,
+            'routing_key': method.routing_key,
+            'message_count': method.message_count
+        }
 
-    def publish_message(self, exchange_name: str, routing_key: str, payload: str, props: Dict[str, Any] = None) -> None:
+        message_properties = {
+            'content_type': properties.content_type,
+            'content_encoding': properties.content_encoding,
+            'headers': properties.headers,
+            'delivery_mode': properties.delivery_mode,
+            'priority': properties.priority,
+            'correlation_id': properties.correlation_id,
+            'reply_to': properties.reply_to,
+            'expiration': properties.expiration,
+            'message_id': properties.message_id,
+            'timestamp': properties.timestamp,
+            'type': properties.type,
+            'user_id': properties.user_id,
+            'app_id': properties.app_id,
+            'cluster_id': properties.cluster_id
+        }
+        if ack:
+            delivery_tag = delivery_data['delivery_tag']
+            self._get_channel().basic_ack(delivery_tag=delivery_tag)
+        return delivery_data, message_properties, body
+
+    def publish_message(self, exchange_name: str, routing_key: str, payload: str, props: Optional[Dict[str, Any]] = None) -> None:
         """
         Publish message to the queue.
 
@@ -699,6 +706,7 @@ class RabbitMq(object):
         self._get_channel().confirm_delivery()
         logger.debug('Begin checking confirm publish')
         if activate is True:
+            # pylint: disable=protected-access
             self._get_channel()._impl.add_callback(callback=confirm_callback,
                                                    replies=[pika.spec.Basic.Ack],
                                                    one_shot=False)
@@ -1106,10 +1114,10 @@ class RabbitMq(object):
         | source | testExchange |
         | vhost: | / |
         """
-        path = '/bindings/{vhost}/e/{exchange}/q/{queue}'.format(
-            vhost=self._quote_vhost(vhost),
-            exchange=quote(exchange_name),
-            queue=quote(queue_name))
+        vhost=self._quote_vhost(vhost)
+        exchange=quote(exchange_name)
+        queue=quote(queue_name)
+        path = f'/bindings/{vhost}/e/{exchange}/q/{queue}'
 
         response = requests.get(self.http_connection.url + path,
                                 auth=self.http_connection.auth,
