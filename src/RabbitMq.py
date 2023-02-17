@@ -51,7 +51,7 @@ class BlockedConnection(pika.BlockingConnection):
     Wrapper over standard connection to RabbitMQ
     Allows to register connection lock events of the server
     """
-    def __init__(self, parameters: Parameters = None, impl_class: Type[BaseConnection] = None) -> None:
+    def __init__(self, parameters: Parameters = None, impl_class: Optional[Type[BaseConnection]] = None) -> None:
         """Constructor arguments are supplemented with
         callbacks to register blocking events
 
@@ -164,7 +164,7 @@ class RabbitMq(object):
         return self._amqp_connection
 
     def _connect_to_amqp(self, host: str, port: Union[int, str], username: str = 'guest', password: str = 'guest',
-                         alias: str = None, virtual_host: str = '/', socket_timeout: int = 15,
+                         alias: Optional[str] = None, virtual_host: str = '/', socket_timeout: int = 15,
                          heartbeat_timeout: int = 600, blocked_timeout: int = 300) -> int:
         """ Connect to server via AMQP.
 
@@ -342,7 +342,7 @@ class RabbitMq(object):
         return self._channel
 
     def create_exchange(self, exchange_name: str, exchange_type: str, auto_delete: bool = False,
-                        durable: bool = False, arguments: Dict[str, Any] = None) -> None:
+                        durable: bool = False, arguments: Optional[Dict[str, Any]] = None) -> None:
         """
         Create exchange.
 
@@ -409,7 +409,7 @@ class RabbitMq(object):
         self._get_channel().exchange_delete(exchange=exchange_name)
 
     def create_queue(self, queue_name: str, auto_delete: bool = False, durable: bool = False,
-                     node: str = None, arguments: Dict[str, Any] = None) -> None:
+                     node: Optional[str] = None, arguments: Optional[Dict[str, Any]] = None) -> None:
         """
         Create queue.
 
@@ -451,7 +451,7 @@ class RabbitMq(object):
             return False
 
     def binding_exchange_with_queue(self, exchange_name: str, queue_name: str, routing_key: str = '',
-                                    arguments: Dict[str, Any] = None) -> None:
+                                    arguments: Optional[Dict[str, Any]] = None) -> None:
         """
         Create binding of exchange with queue.
 
@@ -473,7 +473,7 @@ class RabbitMq(object):
                                        arguments=arguments)
 
     def unbind_queue(self, queue_name: str, exchange_name: str, routing_key: str = '',
-                     arguments: Dict[str, Any] = None) -> None:
+                     arguments: Optional[Dict[str, Any]] = None) -> None:
         """
         Unbind queue from exchange.
 
@@ -706,7 +706,7 @@ class RabbitMq(object):
     # Manager API
 
     @staticmethod
-    def _prepare_request_headers(body: Dict[str, Any] = None) -> Dict[str, str]:
+    def _prepare_request_headers(body: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """
         Headers definition for HTTP-request.
         Args:*\n
@@ -1118,7 +1118,7 @@ class RabbitMq(object):
         response.raise_for_status()
         return response.json()
 
-    def get_message(self, queue_name: str, count: int, requeue: bool, encoding: str, truncate: int = None,
+    def get_message(self, queue_name: str, count: int, requeue: bool, encoding: str, truncate: Optional[int] = None,
                     vhost: str = '%2F', ackmode: str = 'ack_requeue_true') -> List[Dict[str, Any]]:
         """
         Get message from the queue.
